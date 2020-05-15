@@ -13,5 +13,4 @@ extern int VerboseMode;
 extern int createAAD;
 extern int AADsize;
 
-//void vector_gen(uchar *Key, int KeySize);
 

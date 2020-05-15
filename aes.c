@@ -54,9 +54,9 @@ static const uchar InvSBox[256] = {
 static const uchar Rcon1[10] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36};
 
 /**
- *\fn Rotword 
- *\param[in] minword Mot de 4 octets 
- *\brief le premier octet de minword est déplacé à la fin.
+ * Rotword 
+ * minword (4-bytes table) 
+ * First bytes move to the end
  */ 
 void Rotword(uchar minword[]){
     int i = 0;
@@ -69,9 +69,9 @@ void Rotword(uchar minword[]){
 }
 
 /**
- *\fn Subword
- *\param[in] minword Mot de 4 octets.
- *\brief Transforme chaque octet du mot avec la Table de Substitution SBox.
+ * Subword
+ * minword (4-bytes table)
+ * Use the Sbox 
  */ 
 void Subword(uchar minword[]) {
     int a,b;
@@ -80,14 +80,12 @@ void Subword(uchar minword[]) {
         b = minword[i]%16;
         minword[i] = SBox[a*16+b];
     }
-    //return Colword;
 }
 
 /**
- *\fn KeySchedule  
- *\param[in] Key clé de chiffrement sous forme d'un tableau (allocation dynamique de mémoire) 
- *\param[in] **word Tableau sous la forme d'un tableau 2D de taille Nb(Nb+1)x4 octets 
- *\brief A partir de la clé de chiffrement, détermine et stocke l'ensemble des clés de ronde dans la table Ronde
+ * KeySchedule  
+ * In: Key (u-char table) 
+ * Out: word which countain all schedule keys.  
  */ 
 void KeySchedule(uchar Key[], uchar **word){
     int i = 0;
@@ -106,13 +104,8 @@ void KeySchedule(uchar Key[], uchar **word){
         if (i%Nk == 0){
             Rotword(temp);
             Subword(temp);
-            /*
-            for (j=0;j<Nb;j++){
-                temp[j] = temp[j] ^ Rcon[i/Nk][j];
-            }*/
             temp[0] = temp[0] ^ Rcon1[(i/Nk)-1];
         }
-        //Condition jamais remplie pour l'aes 128, 192.
         else if (Nk > 6 && i%Nk == 4){
             Subword(temp);
         }
@@ -124,27 +117,23 @@ void KeySchedule(uchar Key[], uchar **word){
 }
 
 /**
- *\fn KeyRound
- *\param[in] **word Tableau contenant les différentes clés de rondes.
- *\param[in] KeyR[] Tableau de taille Nk*Nb
- *\param[in] NTour Numéro du tour en cours. 
- *\brief Extraire la clé de chiffrement de la ronde 'NTour' contenue dans 'word' et la stocker dans KeyR.
+ * KeyRound
+ * In:  **word (all schedule keys)
+ *      NTour (integer) 
+ * give the N-Round Key
  */ 
 void KeyRound(uchar **word, uchar KeyR[], int NTour){
     for(int i = 0; i < 4; i++){
         for(int j = 0; j<Nb; j++){
             KeyR[i+4*j] = word[4*NTour+j][i];
-            //KeyR[j+4*i] = word[4*NTour+j][i];
         }
     }
 }
 
 /**
-*\fn padding_right 
-*\param[in] *block 
-*\param[in] byte 
-*\param[in] value
-*\brief Complète un bloc pour obtenir un bloc de taille 16 (octets).
+* padding_right 
+* In: *block, byte, value
+* Padding block table from byte to CHUNK with value
 **/
 void padding_right(uchar* block, int byte, int value)
 {
@@ -153,9 +142,8 @@ void padding_right(uchar* block, int byte, int value)
 }
 
 /**
-*\fn get_block
-*\param[in] *file
-*\param[in] buffer[]
+* get_block
+* get current CHUNK-byte from file in buffer
 **/
 int get_block(FILE* file, uchar buffer[])
 {
@@ -173,14 +161,14 @@ int get_block(FILE* file, uchar buffer[])
     }
     else if (c == EOF)
     {
-      padding_right(buffer, i, 0); // padding avec '0' en ascii
+      padding_right(buffer, i, 0); // padding with '0'
       break;
     }
     buffer[i] = (uchar)c; 
   }
   return 1;
 }
-
+//write CHUNK-bytes buffer in fileout
 int write_block(uchar buffer[], FILE* fileout){
     if(feof(fileout)){
         return -1;
@@ -201,11 +189,13 @@ int write_block2(uchar buffer[], FILE* fileout, int Size){
     }
     return 1;
 }
+//Gen Random Table
+//with Entropy
 void vector_gen(uchar *Key, int KeySize){
     static FILE *fp;
     fp = fopen("/dev/random","rb");
     if(!fp){
-        fprintf(stderr,"erreur d'acces au fichier /dev/random. \n");
+        fprintf(stderr,"file access error /dev/random. \n");
         exit(EXIT_FAILURE);
     }
     for (int i = 0; i < KeySize ;i++){
@@ -213,6 +203,7 @@ void vector_gen(uchar *Key, int KeySize){
     }
     fclose(fp);
 }
+//without entropy
 void vector_gen2(uchar *Key, int KeySize){
     srand(time(NULL)+getpid());
     for (int i = 0; i < KeySize ;i++){
@@ -220,9 +211,8 @@ void vector_gen2(uchar *Key, int KeySize){
     }
 }
 /**
-*\fn SubBytes
-*\param[in] buffer 
-*\brief Chaque octet de 'buffer' est remplacé par un autre grâce à la SBox
+* SubBytes
+* Substitution with SBox
 **/
 void SubBytes(uchar buffer[]){
     int a,b;
@@ -232,7 +222,10 @@ void SubBytes(uchar buffer[]){
         buffer[i] = SBox[a*16+b];
     }
 }
-
+/**
+* SubBytes
+* Substitution with InvSBox
+**/
 void InvSubBytes(uchar buffer[]){
     int a,b;
     for(int i = 0; i < 16; i++){
@@ -242,9 +235,9 @@ void InvSubBytes(uchar buffer[]){
     }
 }
 /**
- *\fn ShiftRows
- *\param[in] buffer 
- *\brief Vu comme un tableau de taille 4*4, on permutte les éléments (octets) de chaque ligne. 
+ * ShiftRows
+ * In: Buffer (CHUNK-bytes size)
+ * Bytes permutation on 4-bytes block
  **/
 void ShiftRows(uchar buffer[]){
     uchar temp[4];
@@ -257,7 +250,11 @@ void ShiftRows(uchar buffer[]){
         }
     }    
 }
-
+/**
+ * InvShiftRows
+ * In: Buffer (CHUNK-bytes size)
+ * Bytes permutation on 4-bytes block
+ **/
 void InvShiftRows(uchar buffer[]){
     uchar temp[4];
     for(int i = 1; i < 4; i++){
@@ -270,13 +267,12 @@ void InvShiftRows(uchar buffer[]){
     }    
 }
 /**
- *\fn xtime
- *\param[in] bytes 
- *\brief multiplication par x ....
+ * xtime
+ * multiplication by x in F_128 =  F[X]/(P)
  **/
 uchar xtime(uchar Bytes){
     if(Bytes/128 == 1){
-        return (uchar) (Bytes<<1) ^ 0x1b; //0x91 ?
+        return (uchar) (Bytes<<1) ^ 0x1b; 
     }
     else{
         return (uchar) (Bytes<<1);
@@ -284,9 +280,8 @@ uchar xtime(uchar Bytes){
 }
 
 /**
- *\fn MixColumns 
- *\param[in] buffer
- *\brief 
+ * MixColumns 
+ * buffer
  **/
 void MixColumns(uchar buffer[]){
     uchar temp[4];
@@ -312,10 +307,8 @@ void InvMixColumns(uchar buffer[]){
     }
 }
 /**
- *\fn AddRoundKey 
- * \param[in] buffer sous la forme d'un tableau de 16 octets.
- * \param[in] KeyR Clé de ronde sous la forme d'un tableau de 16 octets.
- * \brief 
+ * AddRoundKey 
+ * CHUNK-bytes block xor with the round key
  **/
 
 void AddRoundKey(uchar buffer[], uchar KeyR[]){
@@ -324,12 +317,7 @@ void AddRoundKey(uchar buffer[], uchar KeyR[]){
     }
 }
 
-/**
- *\fn AES_cipher
- *\param[in] *file
- *\param[in] **word
- *\brief 
- */
+// AES_cipher function
 void AES_cipher(uchar buffer[], uchar **word){
     uchar KeyR[16];
     KeyRound(word,KeyR,0);
@@ -347,12 +335,7 @@ void AES_cipher(uchar buffer[], uchar **word){
     AddRoundKey(buffer,KeyR);
 }
 
-/**
- *\fn AES_decipher 
- *\param[in] *file
- *\param[in] **word
- *\brief 
- */
+//AES_InvCipher function
 void AES_InvCipher(uchar buffer[], uchar **word){
     uchar KeyR[16];
     KeyRound(word,KeyR,Nr);
@@ -367,10 +350,6 @@ void AES_InvCipher(uchar buffer[], uchar **word){
         AddRoundKey(buffer,KeyR);
 
         InvMixColumns(buffer);
-        /*for (int i = 0; i<16; i++){
-            printf("%4x", buffer[i]);
-        }
-        printf("\n");*/
     }
     InvShiftRows(buffer);
     InvSubBytes(buffer);
@@ -378,59 +357,31 @@ void AES_InvCipher(uchar buffer[], uchar **word){
     AddRoundKey(buffer,KeyR);
 }
 
-/**
- *\fn Encrypt_ECB
- *\param[in] *file
- *\param[in] Key[]
- *\param[in] *fileout
- *\brief 
- */
+//Encryption with ECB mode
 void Encrypt_ECB(FILE *file, uchar **word, FILE *fileout){
 
-    uchar* buffer = calloc(1,CHUNK); //blocs de 16*8 octets = 128 bits 
+    uchar* buffer = calloc(1,CHUNK); 
 
     while (get_block(file, buffer) != -1)
     { 
         AES_cipher(buffer,word);
         write_block(buffer,fileout);
     }
-    /*for (int i = 0; i<16; i++){
-        printf("%4x", buffer[i]);
-    }
-    printf("\n");*/
-    //Free
     free(buffer);
 }
-/**
- *\fn Decrypt_ECB
- *\param[in] *file
- *\param[in] Key[]
- *\param[in] *fileout
- *\brief 
- */
+//Decryption with ECB mode
 void Decrypt_ECB(FILE *file, uchar **word, FILE *fileout){
-    uchar* buffer = calloc(1,CHUNK); //blocs de 16*8 octets = 128 bits 
+    uchar* buffer = calloc(1,CHUNK); 
 
     while (get_block(file, buffer) != -1)
     { 
         AES_InvCipher(buffer,word);
         write_block(buffer,fileout);
     }
-    /*for (int i = 0; i<16; i++){
-        printf("%4x", buffer[i]);
-    }
-    printf("\n");*/
-    //Free
     free(buffer);
 }
 
-/**
- *\fn Encrypt_CBC
- *\param[in] *file
- *\param[in] Key[]
- *\param[in] *fileout
- *\brief 
- */
+//Encryption with CBC mode
 void Encrypt_CBC(FILE *file, uchar **word, FILE *fileout, uchar InitVector[]){
     uchar* buffer = calloc(CHUNK,sizeof(uchar));
     uchar* prec = calloc(CHUNK,sizeof(uchar));
@@ -451,13 +402,7 @@ void Encrypt_CBC(FILE *file, uchar **word, FILE *fileout, uchar InitVector[]){
     free(prec);
 }
 
-/**
- *\fn Decrypt_CBC
- *\param[in] *file
- *\param[in] Key[]
- *\param[in] *fileout
- *\brief 
- */
+//Encryption with CBC mode
 void Decrypt_CBC(FILE *file, uchar **word, FILE *fileout, uchar InitVector[]){
     uchar* buffer = calloc(1, sizeof(uchar)*CHUNK);
     uchar* actu = calloc(1,sizeof(uchar)*CHUNK);

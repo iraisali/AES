@@ -5,8 +5,6 @@ OBJ := $(SRC:.c=.o)
 
 N=100
 
-#CFLAGS = -I./src -I./aes -Wall 
-
 all: clean AES cleanobj
 
 AES: $(OBJ)
@@ -15,7 +13,6 @@ AES: $(OBJ)
 %.o: %.c
 	$(CC) -c -o $@ $^ -Wall
 
-#.PHONY: clean
 
 clean:
 	rm -f $(OBJ)
@@ -29,7 +26,7 @@ test:
 	$(CC) aes_tests/aes_test.c aes.c -o AES_TEST
 	./AES_TEST
 
-bench: benchECB benchCBC #benchGCM
+bench: benchECB benchCBC
 
 benchECB:
 	@echo "AES benchmarks for 128-bits key and ECB mode, N = $(N)"

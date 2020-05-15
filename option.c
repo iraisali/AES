@@ -4,6 +4,7 @@
 int VerboseMode;
 int createAAD;
 int AADsize;
+//Determine if the table is a valide Key
 int is_valid_key(char Key[]){
     int N;
     N = strlen(Key)/2;
@@ -20,14 +21,13 @@ int is_valid_key(char Key[]){
         strtol(Key, &end, 16);
         if(*end != 0){
             fprintf(stderr, "Wrong key format !\n");
-            //printf("%d", c);
             return -1;
         }
         return N;
     }
     return 0;
 }
-
+//Help Display
 void usage()
 {
     fprintf(stderr, "AES algorithm\n");
@@ -48,7 +48,7 @@ void usage()
  
     exit(EXIT_FAILURE);
 }
-
+//Parsing options
 uchar* options(int argc, char* argv[], int *N, int *decrypt, int *mode, int *verb, uchar *key){
     char key_in[256];
     int c;
@@ -59,7 +59,7 @@ uchar* options(int argc, char* argv[], int *N, int *decrypt, int *mode, int *ver
     {
       switch (c)
       {
-        case 'k': // SIMPLIFIER CETTE PARTIE  !
+        case 'k': //may be simplify..
             optk = 1;
             strcpy(key_in, optarg);
             FILE *key_file = fopen(key_in,"r"); 
@@ -67,13 +67,12 @@ uchar* options(int argc, char* argv[], int *N, int *decrypt, int *mode, int *ver
                 fseek(key_file,0,SEEK_END);
                 *N = (ftell(key_file))/2;
                 rewind(key_file);
-                //printf("%i\n", *N);
                 if (*N != 16 && *N != 24 && *N != 32){
                     fprintf(stderr, "Provided key doesn't have the expected size, expected 16,24 or 32 bytes key\n");
                     exit(EXIT_FAILURE);
                 }
                 key = malloc((int)((*N))*sizeof(uchar));
-                char temp[3]; //del 
+                char temp[3];
                 temp[2] = '\0'; 
                 fseek(key_file,0,SEEK_SET);
                 for (int i = 0; i < (int)((*N)) ;i++){
@@ -87,12 +86,12 @@ uchar* options(int argc, char* argv[], int *N, int *decrypt, int *mode, int *ver
 
             else if((*N = is_valid_key(key_in)) != -1){
                 key = malloc((int)*N*sizeof(uchar));
-                char temp[3]; // del
-                temp[2] = '\0'; // ça aussi
-                for (int i = 0; i<*N*2; i+=2){ // N 
+                char temp[3]; 
+                temp[2] = '\0';
+                for (int i = 0; i<*N*2; i+=2){ 
                     temp[0] = key_in[i];
                     temp[1] = key_in[i+1];
-                    key[i/2] = strtol(temp,NULL,16); // unif
+                    key[i/2] = strtol(temp,NULL,17); 
                 }
             }
             else{
@@ -140,7 +139,6 @@ uchar* options(int argc, char* argv[], int *N, int *decrypt, int *mode, int *ver
             int bitsize;
             bitsize = atoi(optarg);
             *N = bitsize/8;
-            //printf("%i", *N);
             if (*N == 16|| *N == 24 || *N == 32){
                 key = malloc((int)((*N))*sizeof(uchar));
                 vector_gen(key,*N);
@@ -168,7 +166,7 @@ uchar* options(int argc, char* argv[], int *N, int *decrypt, int *mode, int *ver
     }
     return key;
 }
-
+//Print when verbose mode is on
 int info(const char* format, ...)
 {
   if (!VerboseMode)

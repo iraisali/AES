@@ -1,9 +1,7 @@
 /**
- * \file main.c
- * \brief Fonctions pour la génération des clés de rondes de l'AES.
- * \author Idris Raïs-Ali
- * \version 1
- * \date 10 avril 2020
+ * Idris Raïs-Ali
+ * version 1
+ * 15 mai 2020
  */
 
 
@@ -16,7 +14,7 @@
 #define CHUNK 16
 
 
-//Valeurs des paramètres dans le cas d'une clé de 256 bits:
+//AES Param for 256-bits Key
 int Nb = 4;
 int Nk = 8;
 int Nr = 14;
