@@ -49,16 +49,16 @@ Arguments:
 ```
 
 # Examples
-- Encryption the text named `alice` with the file `key256` which countain a 256-bits key with default mode (EBC):
+- Encrypt the text named `alice` with the file `key256` which countain a 256-bits key with default mode (EBC):
 ```
-./AES -k key256 alice
+./AES -k toys/key256 toys/alice
 ```
 This command create a new file named `cipher` which contain the encrypted text.
-- Decryption of the previous `cipher` text:
+- Decryption of previous `cipher` text:
 ```
-./AES -k key256 -d cipher
+./AES -k toys/key256 -d cipher
 ```
 This command create a new file named `decipher` which contain the decrypted text.
 - Using CBC mode with a random 192-bits key:
-  - Encryption: `./AES -s 192 -m CBC alice` (Create both an I.V. in `iv` and a random key in `rkey.key`).
+  - Encryption: `./AES -s 192 -m CBC toys/alice` (Create both an I.V. in `iv` and a random key in `rkey.key`).
   - Decryption: `./AES -k rkey.key -m CBC -d cipher` (Use the previously created `iv`)
